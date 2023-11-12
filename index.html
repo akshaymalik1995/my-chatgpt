@@ -6,12 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My GPTs</title>
     <script src="https://cdn.tailwindcss.com"></script>
+   
 </head>
 
 <body>
 
     <div class="max-w-xl mx-auto p-2">
+        <aside id="sidebar" class="h-screen w-64 hidden bg-gray-800 shadow absolute left-0 top-0">
+            <div class="flex px-2 bg-gray-600 items-center py-4 justify-between">
+                <div class="text-white text-center font-bold">My GPTS</div>
+                <div id="close-sidebar-btn" class="text-white rounded cursor-pointer bg-gray-800 h-8 w-8 flex justify-center text-lg">x</div>
+            </div>
+           
+            <div id="side-tabs">
+                <div class="hover:bg-gray-700 px-2 py-4  text-white cursor-pointer">Word Explainer</div>
+                <div class="hover:bg-gray-700 py-4 px-2 text-white cursor-pointer" >Bug Finder</div>
+            </div>
+ <hr>
+            <div id="add-prompt-btn" class=" hover:bg-gray-700 bg-gray-400 px-4 py-2  cursor-pointer"> Add + </div>
+        </aside>
+        <div id="open-sidebar-btn" class="border cursor-pointer px-2 py-1">Menu</div>
         <nav class="flex gap-2 py-2 flex-wrap">
+            
             <div data-target="home" class="border cursor-pointer px-2 py-1">Home</div>
             <div data-target="settings" class="border cursor-pointer px-2 py-1">Settings</div>
         </nav>
@@ -19,6 +35,7 @@
 
         </div>
         <div id="home" class="hidden">
+            <h2 id="prompt-title" class="text-center my-4 text-4xl" >GPT</h2>
             <form class="my-12" id="prompt-form">
                 <textarea class="w-full border-2 p-2 rounded h-20 focus:outline-none focus:ring-2 focus:ring-blue-600"
                     placeholder="Enter query" name="user-prompt" id="user-prompt"></textarea>
@@ -32,7 +49,7 @@
                     type="submit">Submit</button>
             </form>
 
-            <div class="shadow font-mono p-4 border-1 border-black" id="answer">
+            <div class="shadow prose markdown font-mono p-4 border-1 border-black" id="answer">
                 You will see the response here.
             </div>
         </div>
@@ -45,9 +62,15 @@
                     type="submit">Submit</button>
             </form>
             <form id="prompt-settings-form" class="mt-6" action="">
+                <label for="prompt-title">Title</label>
+                <input
+                    class="px-4 w-full my-2 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded-lg mr-2"
+                    autocomplete="off" placeholder="Title" name="prompt-title" id="prompt-title" type="text">
+                    <label for="system-prompt">System Prompt</label>
                 <textarea
-                    class="px-4 w-full py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded-lg mr-2"
+                    class="px-4 w-full py-2 my-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded-lg mr-2"
                     autocomplete="off" placeholder="System Prompt" name="system-prompt" id="system-prompt" type="text"></textarea>
+                    <label for="max-tokens">Max Tokens</label>
                 <input
                     class="px-4 w-full py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded-lg mr-2"
                     autocomplete="off" placeholder="Max Tokens" name="max-tokens" id="max-tokens" type="number">
@@ -55,10 +78,14 @@
                 <button class="px-4 py-2 my-2 w-full bg-blue-500 text-white rounded-lg focus:outline-none hover:bg-blue-600"
                     type="submit">Submit</button>
             </form>
+            <button id="delete-prompt" class="px-4 py-2 my-2 w-full bg-red-500 text-white rounded-lg focus:outline-none hover:bg-red-600"
+                    type="button">Delete</button>
         </div>
 
 
     </div>
+    
+
     <script src="index.js"></script>
 </body>
 
