@@ -85,11 +85,9 @@ sideTabs.addEventListener("click", e => {
 let gpts = [
     {
         id : "1",
-        title : "Word Explainer",
-        userPrompt : "",
-        chatResponse : "",
+        title : "GPT",
         settings : {
-            systemPrompt : "Just a prompt",
+            systemPrompt : "You will be given a prompt. Respond as briefly as you can.",
             maxTokens : 1024
         }
     },
