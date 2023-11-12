@@ -1,7 +1,41 @@
 const promptForm = document.querySelector("#prompt-form")
 const keyForm = document.querySelector("#key-form")
+const promptSettingsForm = document.querySelector("#prompt-settings-form")
+let promptSettings = {
+    systemPrompt : "You shall be given a prompt. Respond as briefly as you can",
+    maxTokens : 1024
+}
+function handlePromptSettingsForm(e){
+    e.preventDefault()
+    const form = e.target
+    const systemPrompt = form['system-prompt'].value
+    let maxTokens = form['max-tokens'].value
+    if (maxTokens){
+        maxTokens = parseInt(maxTokens)
+    }
+    promptSettings = {
+        systemPrompt,
+        maxTokens,
 
+    }
+    localStorage.setItem("prompt-settings", JSON.stringify(promptSettings))
+    addInfo("Settings updated")
 
+}
+
+promptSettingsForm.addEventListener("submit", handlePromptSettingsForm)
+
+function insertPromptSettings(){
+    const localSettings = localStorage.getItem("prompt-settings")
+    if (localSettings){
+        let parsedSettings = JSON.parse(localSettings)
+        promptSettings = parsedSettings
+    }
+    promptSettingsForm['system-prompt'].value = promptSettings.systemPrompt
+    promptSettingsForm['max-tokens'].value = promptSettings.maxTokens
+}
+
+insertPromptSettings()
 
 
 
@@ -64,10 +98,11 @@ async function handlePromptForm(e) {
         injectResponse("Loading...")
         disableForm(form, disabled = true)
         const data = await talkToGPT(
-            systemPrompt = "You shall be given a prompt. Respond as briefly as you can",
+            systemPrompt = promptSettings.systemPrompt,
             userPrompt = userPrompt,
             openai_key = key,
-            model = selectedModel
+            model = selectedModel,
+            maxTokens = promptSettings.maxTokens
         )
 
         const content = data.choices[0].message.content
@@ -127,6 +162,8 @@ async function talkToGPT(systemPrompt, userPrompt, openai_key, model = "gpt-3.5-
         console.error(err)
     }
 }
+
+
 
 const navigation = {
     active: "home",
