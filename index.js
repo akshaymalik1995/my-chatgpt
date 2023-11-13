@@ -1,15 +1,9 @@
-const promptForm = document.querySelector("#prompt-form")
-const keyForm = document.querySelector("#key-form")
-const promptSettingsForm = document.querySelector("#prompt-settings-form")
-const closeSidebarBtn = document.querySelector("#close-sidebar-btn")
-closeSidebarBtn.addEventListener("click", closeSidebar)
-function closeSidebar(){
+function closeSidebar() {
     const sidebar = document.querySelector("#sidebar")
     sidebar.style.display = "none"
 }
-const openSidebarBtn = document.querySelector("#open-sidebar-btn")
-openSidebarBtn.addEventListener("click", openSidebar)
-function openSidebar(){
+
+function openSidebar() {
     const sidebar = document.querySelector("#sidebar")
     sidebar.style.display = "block"
 }
@@ -27,7 +21,7 @@ const navigation = {
         this.active = tab
         this.setCurrentTab()
     },
-    initiate(){
+    initiate() {
         const tabs = document.querySelectorAll("nav > div")
         tabs.forEach(tab => {
             const tabId = tab.dataset.target
@@ -42,138 +36,30 @@ const navigation = {
 
 navigation.initiate()
 
-function generateRandomString(length= 14){
+function generateRandomString(length = 14) {
     return Math.random().toString(16).substring(2, length)
 }
 
-const addPromptBtn = document.querySelector("#add-prompt-btn")
-addPromptBtn.addEventListener("click", (e) => {
-    
-    e.stopPropagation()
-    console.log(gpts)
-    gpts.push(
-        {
-            id : generateRandomString(),
-            title : generateRandomString(),
-            userPrompt : "",
-            chatResponse : "",
-            settings : {
-                maxTokens : 1024,
-                systemPrompt : "You shall be given a prompt. Respond as briefly as you can."
 
-            }
-        }
-    )
-    localStorage.setItem("gpts", JSON.stringify(gpts))
-    updateSideTabs()
-})
-
-const sideTabs = document.querySelector("#side-tabs")
-sideTabs.addEventListener("click", e => {
-    const tab = e.target
-    const tabId = tab.dataset.id
-    const gpt = gpts.find(gpt => gpt.id === tabId)
-    activePrompt = gpt
-    updatePromptSettings()
-    navigation.changeTab('home')
-    document.querySelector("#prompt-title").textContent = gpt.title
-    closeSidebar()
-})
-
-
-
-let gpts = [
-    {
-        id : "1",
-        title : "GPT",
-        settings : {
-            systemPrompt : "You will be given a prompt. Respond as briefly as you can.",
-            maxTokens : 1024
-        }
-    },
-]
-
-if (localStorage.getItem("gpts")){
-    gpts = JSON.parse(localStorage.getItem("gpts"))
-}
-
-const deletePromptBtn = document.querySelector("#delete-prompt")
-deletePromptBtn.addEventListener('click', () => {
-   
-    if (gpts.length > 1){
-        gpts = gpts.filter(gpt => gpt.id !== activePrompt.id)
-        activePrompt = gpts[0]
-        updatePromptSettings()
-        updateSideTabs()
-        localStorage.setItem("gpts", JSON.stringify(gpts))
-        navigation.changeTab("home")
-        
-    } else {
-        addInfo("You cannot delete all prompts")
-    }
-})
-
-
-function updateSideTabs(){
-    const target = document.querySelector("#side-tabs")
-    target.innerHTML = ""
-    gpts.forEach(gpt => {
-        const tab = document.createElement("div")
-        tab.classList.add("hover:bg-gray-700", "px-4", "py-4", "text-white", "cursor-pointer")
-        tab.textContent = gpt.title
-        tab.setAttribute("data-id", gpt.id)
-        target.appendChild(tab)
-    })
-}
-updateSideTabs()
-
-
-let activePrompt = gpts[0]
-function handlePromptSettingsForm(e){
+function handleGptSettingsForm(e) {
     e.preventDefault()
     const form = e.target
     const systemPrompt = form['system-prompt'].value
     let maxTokens = form['max-tokens'].value
-    let promptTitle = form['prompt-title'].value
-    if (maxTokens){
+    let title = form['prompt-title'].value
+    if (maxTokens) {
         maxTokens = parseInt(maxTokens)
     }
-    activePrompt.settings = {
-        systemPrompt,
-        maxTokens,
-    }
 
-    activePrompt.title = promptTitle
-    updatePromptSettings()
-    gpts = gpts.map(gpt => {
-        if (gpt.id === activePrompt.id){
-            gpt = activePrompt
-           
-        }
-        return gpt
-    })
-    localStorage.setItem("gpts", JSON.stringify(gpts))
-    updateSideTabs()
-    addInfo("Settings updated")
+    state.activeGpt = {...state.activeGpt, systemPrompt, maxTokens, title }
+    updateGptUI()
+    updateGpts()
+    updateSidebarUI()
+    saveGptsToLocal()
+    updateInfoUI("Settings successfully updated")
 
 }
 
-promptSettingsForm.addEventListener("submit", handlePromptSettingsForm)
-
-function updatePromptSettings(){
-    injectResponse("You will see the response here")
-
-    document.querySelector("#user-prompt").value = ""
-   
-
-    const settings = activePrompt?.settings
-    promptSettingsForm['system-prompt'].value = settings?.systemPrompt || ""
-    document.querySelector("#prompt-title").textContent = activePrompt?.title || ""
-    promptSettingsForm['max-tokens'].value = settings?.maxTokens || "" 
-    promptSettingsForm['prompt-title'].value = activePrompt?.title || ""
-}
-
-updatePromptSettings()
 
 
 
@@ -184,13 +70,14 @@ function handleKeyForm(e) {
     if (!key) {
         return
     }
-    localStorage.setItem('key', key)
-    addInfo("Key is added")
+    state.openaiKey = key
+    saveKeyToLocal()
+    updateInfoUI("Key is successfully added")
     form.reset()
 }
 
 
-function addInfo(info) {
+function updateInfoUI(info) {
     const target = document.querySelector("#info")
     target.textContent = info
     target.style.display = "block"
@@ -201,7 +88,7 @@ function addInfo(info) {
 
 }
 
-keyForm.addEventListener("submit", handleKeyForm)
+
 
 function disableForm(form, disabled) {
     const elements = form.elements
@@ -210,81 +97,53 @@ function disableForm(form, disabled) {
     }
 }
 
-function injectResponse(content) {
+function updateAnswerUI(content) {
     const target = document.querySelector("#answer")
     target.innerText = content
 }
 
-async function handlePromptForm(e) {
+async function handleQueryForm(e) {
     e.preventDefault()
     const form = e.target
     let userPrompt = form['user-prompt'].value
-    let key = localStorage.getItem("key")
+    let key = state.openaiKey
     if (!userPrompt) {
-        addInfo("The query cannot be empty")
+        updateInfoUI("The query cannot be empty")
         return
     }
     if (!key) {
-        addInfo("Key is missing")
+        updateInfoUI("Key is missing")
         return
     }
-
+    state.activeGpt.userPrompt = userPrompt
 
     let selectedModel = form['selected-model'].value
     try {
         console.log("Loading...")
-        injectResponse("Loading...")
+        updateAnswerUI("Loading...")
         disableForm(form, disabled = true)
-        const settings = activePrompt.settings
-        const data = await talkToGPT(
-            systemPrompt = settings.systemPrompt,
-            userPrompt = userPrompt,
-            openai_key = key,
-            model = selectedModel,
-            maxTokens = settings.maxTokens
-        )
+        const {maxTokens, systemPrompt} = state.activeGpt
+        const url = "https://api.openai.com/v1/chat/completions"
+        const headers = {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${key}`
+        }
 
-        const content = data.choices[0].message.content
-        
-        injectResponse(content)
-        console.log(content)
-    } catch (err) {
-        console.log(err)
-        injectResponse("Something went wrong! Try again.")
-    } finally {
-        disableForm(form, disabled = false)
-    }
-}
+        const body = {
+            model: selectedModel,
+            max_tokens: maxTokens,
+            messages: [
+                {
+                    "role": "system",
+                    "content": systemPrompt,
+                },
+                {
+                    "role": "user",
+                    "content": userPrompt,
+                },
+            ]
+        }
 
-promptForm.addEventListener("submit", handlePromptForm)
-
-async function talkToGPT(systemPrompt, userPrompt, openai_key, model = "gpt-3.5-turbo", maxTokens = 1024) {
-    if (!systemPrompt || !userPrompt || !openai_key) {
-        throw new Error("System prompt or user prompt or openai key is missing.")
-    }
-
-    const url = "https://api.openai.com/v1/chat/completions"
-    const headers = {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${openai_key}`
-    }
-
-    const body = {
-        model: model,
-        max_tokens: maxTokens,
-        messages: [
-            {
-                "role": "system",
-                "content": systemPrompt,
-            },
-            {
-                "role": "user",
-                "content": userPrompt,
-            },
-        ]
-    }
-
-    try {
         const response = await fetch(url, {
             method: "POST",
             headers: headers,
@@ -293,15 +152,183 @@ async function talkToGPT(systemPrompt, userPrompt, openai_key, model = "gpt-3.5-
         let data = await response.json()
         if (!response.ok) {
             console.error(data)
-            throw new Error(`Response returned with status code ${response.statusText}`)
+            throw new Error(`Response returned with status code ${response.status}`)
         }
-        return data
 
+        const content = data.choices[0].message.content
+
+        document.querySelector("#answer").innerText = content
     } catch (err) {
-        console.error(err)
+        console.log(err)
+        document.querySelector("#answer").innerText = "Something went wrong!"
+    } finally {
+        disableForm(form, disabled = false)
     }
 }
 
 
+function addNewGpt() {
+    const newGpt = {
+        id: generateRandomString(),
+        title: generateRandomString(),
+        userPrompt: "",
+        chatResponse: "",
+        maxTokens: 1024,
+        systemPrompt: "You shall be given a prompt. Respond as briefly as you can."
+    }
+    
+    state.gpts = [...state.gpts , newGpt]
+    updateSidebarUI()
+    saveGptsToLocal()
+}
 
 
+const state = {
+    gpts: [
+        {
+            id: "1",
+            title: "GPT",
+            userPrompt: "",
+            chatResponse: "",
+            maxTokens: 1024,
+            systemPrompt: "You shall be given a prompt. Respond as briefly as you can.",
+        }
+    ],
+    openaiKey : "",
+    activeGpt: null,
+    
+}
+
+
+function setActiveGpt(){
+    state.activeGpt  = state.gpts[0]
+} 
+
+function getActiveGpt() {
+    return state.gpts.find(gpt => gpt.id === state.activeGpt.id)
+}
+
+function updateGpts(){
+    state.gpts = state.gpts.map(gpt => {
+        if (gpt.id === state.activeGpt.id){
+            return state.activeGpt
+        } else {
+            return gpt
+        }
+    })
+}
+
+function updateSidebarUI() {
+    const target = document.querySelector("#side-tabs")
+    target.innerHTML = ""
+   state.gpts.forEach(gpt => {
+        const tab = document.createElement("div")
+        tab.classList.add("hover:bg-gray-700", "px-4", "py-4", "text-white", "cursor-pointer")
+        tab.textContent = gpt.title
+        tab.setAttribute("data-id", gpt.id)
+        target.appendChild(tab)
+    })
+    saveGptsToLocal()
+}
+
+function updateGptUI() {
+    const { title, maxTokens, userPrompt, chatResponse, systemPrompt } = state.activeGpt
+    const gptSettingsForm = document.querySelector("#prompt-settings-form")
+    document.querySelector("#answer").innerText = chatResponse
+    document.querySelector("#user-prompt").value = userPrompt
+    document.querySelector("#prompt-title").textContent = title || "GPT"
+    gptSettingsForm['prompt-title'].value = title || ""
+    gptSettingsForm['system-prompt'].value = systemPrompt || ""
+    gptSettingsForm['max-tokens'].value = maxTokens || 1024
+}
+
+
+
+function changeGpt(e) {
+    const tab = e.target
+    const tabId = tab.dataset.id
+    const gpt = state.gpts.find(gpt => gpt.id === tabId)
+    console.log(gpt)
+    state.activeGpt = gpt
+    updateGptUI()
+}
+
+function deleteGpt(){
+    if (state.gpts.length > 1){
+        const gptid = state.activeGpt.id
+        const gptToDelete = state.gpts.find(gpt => gpt.id === gptid)
+        state.gpts = state.gpts.filter(gpt => gpt.id !== gptid)
+        state.activeGpt = state.gpts[0]
+        updateGptUI()
+        updateSidebarUI()
+        navigation.changeTab("home")
+        updateInfoUI(`${gptToDelete.title} gpt successfully deleted`)
+    } else {
+        updateInfoUI("You need to have at least one gpt.")
+    }
+    
+}
+
+function getGptsFromLocal() {
+    const gpts = localStorage.getItem("gpts")
+    if (gpts) {
+        state.gpts = JSON.parse(gpts)
+    }
+}
+
+function getKeyFromLocal(){
+    const key = localStorage.getItem("key")
+    if (key) {
+        state.openaiKey = key
+    }
+}
+
+function saveKeyToLocal(){
+    localStorage.setItem("key", state.openaiKey)
+}
+
+function saveGptsToLocal() {
+    localStorage.setItem("gpts", JSON.stringify(state.gpts))
+}
+
+// Initialization
+getKeyFromLocal()
+getGptsFromLocal()
+setActiveGpt()
+updateSidebarUI()
+updateGptUI()
+
+
+// TO ADD A NEW GPT
+const addGptBtn = document.querySelector("#add-prompt-btn")
+addGptBtn.addEventListener("click", addNewGpt)
+
+// Handling gpt settings form submission
+const gptSettingsForm = document.querySelector("#prompt-settings-form")
+gptSettingsForm.addEventListener("submit", handleGptSettingsForm)
+
+// Handle Query Form
+const queryForm = document.querySelector("#prompt-form")
+queryForm.addEventListener("submit", handleQueryForm)
+
+// Update Sidebar
+const sideTabs = document.querySelector("#side-tabs")
+sideTabs.addEventListener("click", e => {
+    changeGpt(e)
+    closeSidebar()
+})
+
+
+// Handle GPT Deletion
+const deletePromptBtn = document.querySelector("#delete-prompt")
+deletePromptBtn.addEventListener('click', deleteGpt)
+
+// Handle Openai Key Submission
+const keyForm = document.querySelector("#key-form")
+keyForm.addEventListener("submit", handleKeyForm)
+
+// Handle sidebar open and close
+const closeSidebarBtn = document.querySelector("#close-sidebar-btn")
+closeSidebarBtn.addEventListener("click", closeSidebar)
+const openSidebarBtn = document.querySelector("#open-sidebar-btn")
+openSidebarBtn.addEventListener("click", openSidebar)
